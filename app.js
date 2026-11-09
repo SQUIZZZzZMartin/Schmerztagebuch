@@ -232,8 +232,12 @@ $("#del").onclick = () => {
   const id = S.editId; saveDay(S.date, d => d.entries = (d.entries||[]).filter(x => x.id !== id)); closeForm();
 };
 $("#cancel").onclick = closeForm; $("#close").onclick = closeForm;
+const openMenu = () => { $("#menuOverlay").hidden = false; document.body.style.overflow = "hidden"; };
+const closeMenu = () => { $("#menuOverlay").hidden = true; document.body.style.overflow = ""; };
+$("#menuBtn").onclick = openMenu; $("#menuClose").onclick = closeMenu;
+$("#menuOverlay").addEventListener("click", e => { if (e.target.id === "menuOverlay") closeMenu(); });
 $("#overlay").addEventListener("click", e => { if (e.target.id === "overlay") closeForm(); });
-document.addEventListener("keydown", e => { if (e.key === "Escape" && !$("#overlay").hidden) closeForm(); });
+document.addEventListener("keydown", e => { if (e.key !== "Escape") return; if (!$("#overlay").hidden) closeForm(); else if (!$("#menuOverlay").hidden) closeMenu(); });
 
 /* ---------- Navigation ---------- */
 const go = d => { if (d > today()) return; S.date = d; render(); window.scrollTo({top:0}); };

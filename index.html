@@ -135,6 +135,12 @@ input[type=date],input[type=time]{min-width:0;-webkit-appearance:none;appearance
 .more>.field+.field{margin-top:16px}
 .more summary{font-weight:600;color:var(--accent);cursor:pointer;min-height:32px}
 pre.out{white-space:pre-wrap;overflow-wrap:anywhere;font-size:12px;max-height:200px;overflow:auto;background:var(--surface-2);padding:10px;border-radius:10px;margin:0}
+.topbar{display:flex;align-items:center;justify-content:space-between;padding-top:10px;margin-bottom:-10px}
+.brand{font-family:var(--f-display);font-weight:700;font-size:15px;color:var(--muted)}
+.menubtn{width:44px;height:36px;border:0;border-radius:12px;background:var(--surface);box-shadow:var(--shadow);font-size:18px;display:grid;place-items:center}
+.menusec{display:flex;flex-direction:column;gap:12px;padding-top:4px}
+.menusec h2{font-size:18px}
+.menusec+.menusec{border-top:1.5px solid var(--line);padding-top:16px}
 .foot{text-align:center;font-size:12px;color:var(--muted)}
 @media (prefers-reduced-motion:reduce){*{transition:none!important}}
 </style>
@@ -142,6 +148,7 @@ pre.out{white-space:pre-wrap;overflow-wrap:anywhere;font-size:12px;max-height:20
 <body>
 
 <div class="wrap">
+  <div class="topbar"><span class="brand">Schmerztagebuch</span><button class="menubtn" id="menuBtn" aria-label="Menü: Export und Import" aria-haspopup="dialog">☰</button></div>
   <header>
     <button class="nav" id="prev" aria-label="Vorheriger Tag">‹</button>
     <div class="datebox">
@@ -169,29 +176,6 @@ pre.out{white-space:pre-wrap;overflow-wrap:anywhere;font-size:12px;max-height:20
     <div class="entries" id="entries"></div>
   </section>
 
-  <section class="card" aria-labelledby="h-exp">
-    <h2 id="h-exp">Export</h2>
-    <div class="two">
-      <div class="field"><label class="label" for="expFrom">Von</label><input type="date" id="expFrom"></div>
-      <div class="field"><label class="label" for="expTo">Bis</label><input type="date" id="expTo"></div>
-    </div>
-    <div class="two">
-      <button class="btn ghost" id="expCsv">CSV (Excel)</button>
-      <button class="btn ghost" id="expJson">JSON</button>
-    </div>
-    <div class="notice" id="expMsg" hidden></div>
-    <pre class="out" id="expOut" hidden></pre>
-  </section>
-
-  <section class="card" aria-labelledby="h-imp">
-    <h2 id="h-imp">Import</h2>
-    <p class="notice" style="margin:0">JSON-Export aus der alten Version (oder ein Backup) einlesen. Vorhandene Einträge bleiben erhalten, gleiche Einträge werden nicht doppelt angelegt.</p>
-    <label class="btn ghost" for="impFile">JSON-Datei auswählen</label>
-    <input type="file" id="impFile" accept=".json,application/json" hidden>
-    <div class="notice" id="impMsg" hidden></div>
-  </section>
-
-  <p class="foot">Schmerztagebuch · Daten in Firebase (EU)</p>
 </div>
 
 <button class="fab" id="add"><span>+</span> Eintrag</button>
@@ -244,6 +228,36 @@ pre.out{white-space:pre-wrap;overflow-wrap:anywhere;font-size:12px;max-height:20
   </form>
 </div>
 
-<script type="module" src="app.js?v=4"></script>
+<div class="overlay" id="menuOverlay" hidden>
+  <div class="sheet" role="dialog" aria-modal="true" aria-labelledby="h-menu">
+    <div class="grab"></div>
+    <div class="sheet-head"><h2 id="h-menu">Daten</h2><button type="button" class="nav" id="menuClose" aria-label="Schließen" style="box-shadow:none;background:var(--surface-2)">✕</button></div>
+  <section class="menusec" aria-labelledby="h-exp">
+    <h2 id="h-exp">Export</h2>
+    <div class="two">
+      <div class="field"><label class="label" for="expFrom">Von</label><input type="date" id="expFrom"></div>
+      <div class="field"><label class="label" for="expTo">Bis</label><input type="date" id="expTo"></div>
+    </div>
+    <div class="two">
+      <button class="btn ghost" id="expCsv">CSV (Excel)</button>
+      <button class="btn ghost" id="expJson">JSON</button>
+    </div>
+    <div class="notice" id="expMsg" hidden></div>
+    <pre class="out" id="expOut" hidden></pre>
+  </section>
+
+  <section class="menusec" aria-labelledby="h-imp">
+    <h2 id="h-imp">Import</h2>
+    <p class="notice" style="margin:0">JSON-Export aus der alten Version (oder ein Backup) einlesen. Vorhandene Einträge bleiben erhalten, gleiche Einträge werden nicht doppelt angelegt.</p>
+    <label class="btn ghost" for="impFile">JSON-Datei auswählen</label>
+    <input type="file" id="impFile" accept=".json,application/json" hidden>
+    <div class="notice" id="impMsg" hidden></div>
+  </section>
+
+    <p class="foot">Gespeichert in Firebase (Frankfurt)</p>
+  </div>
+</div>
+
+<script type="module" src="app.js?v=5"></script>
 </body>
 </html>
