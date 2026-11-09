@@ -3,7 +3,7 @@
 import { firebaseConfig, DIARY_ID } from "./firebase-config.js";
 
 const $ = s => document.querySelector(s);
-const ACTS = ["Sitzen","Büro / Schreibtisch","Stehen","Gehen","Fahrrad fahren","Auto fahren","Sport","Restaurant","Hausarbeit","Heben / Tragen","Liegen","Schlafen / Aufwachen","Bücken"];
+const ACTS = ["Sitzen","Büro / Schreibtisch","Stehen","Gehen","Fahrrad fahren","Auto fahren","Sport","Yoga","Hausarbeit","Heben / Tragen","Bücken","Liegen","Schlafen / Aufwachen","Sex"];
 const LOCS = ["Kopf","Gesicht / Kiefer","Nacken","Schulter","Oberarm","Ellbogen","Unterarm","Hand / Handgelenk","Brust","Bauch","Oberer Rücken","Mittlerer Rücken","Unterer Rücken","Hüfte","Gesäß","Leiste","Oberschenkel","Knie","Wade / Schienbein","Fuß / Knöchel"];
 const SIDES = ["links","mitte","rechts","beidseitig"];
 const FACES = ["Vorderseite","Rückseite","Innenseite","Außenseite"];
