@@ -214,9 +214,11 @@ function commit(){
   f.locationNote = $("#fLocOther").value.trim();
   f.timeEnd = $("#fTimeEnd").value; f.meds = $("#fMed").value.trim(); f.note = $("#fNote").value.trim();
   if (f.timeEnd && f.time && f.timeEnd < f.time){ const n = $("#formErr"); n.hidden = false; n.textContent = "„bis“ liegt vor „von“ – bitte Uhrzeit prüfen."; n.scrollIntoView({block:"center",behavior:"smooth"}); return null; }
-  // keine Pflichtfelder – nur ein völlig leerer Eintrag wird nicht gespeichert
-  const filled = f.pain || f.region || f.locationNote || f.side || f.face || f.qualities.length || f.activity || f.note || f.meds || f.helped || f.mood || f.stress;
-  if (!filled){ const n = $("#formErr"); n.hidden = false; n.textContent = "Der Eintrag ist noch leer."; n.scrollIntoView({block:"center",behavior:"smooth"}); return null; }
+  // Pflicht sind nur Schmerzstärke und Körperstelle
+  const miss = [];
+  if (!f.pain) miss.push("Schmerzstärke");
+  if (!f.region && !f.locationNote) miss.push("Körperstelle");
+  if (miss.length){ const n = $("#formErr"); n.hidden = false; n.textContent = "Bitte noch angeben: " + miss.join(" und ") + "."; n.scrollIntoView({block:"center",behavior:"smooth"}); return null; }
   delete f.locations;
   const id = S.editId;
   saveDay(S.date, d => { d.entries = (d.entries||[]).filter(x => x.id !== (id || f.id)); d.entries.push(f); });
