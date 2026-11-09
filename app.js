@@ -119,7 +119,7 @@ function render(){
     const loc = locText(e);
     const ms = [ e.mood ? "Stimmung "+e.mood+"/5" : "", e.stress ? "Stress "+e.stress+"/5" : "" ].filter(Boolean).join(" · ");
     const sub = [ e.activity, (e.qualities||[]).join(", "), e.meds ? "💊 "+e.meds : "", ms ].filter(Boolean).join(" — ");
-    return `<button class="entry" data-id="${esc(e.id)}"><span class="t">${esc(e.time)}</span>
+    return `<button class="entry" data-id="${esc(e.id)}"><span class="t">${esc(e.time)}${e.timeEnd?`<small>–${esc(e.timeEnd)}</small>`:""}</span>
       <span class="pain" style="background:${painColor(e.pain)}">${e.pain}</span>
       <span class="what"><b>${esc(loc || "ohne Stelle")}</b>${sub?`<span>${esc(sub)}</span>`:""}${e.note?`<span>${esc(e.note)}</span>`:""}</span></button>`;
   }).join("") : `<div class="empty">Noch keine Einträge für diesen Tag.<br>Tippe unten auf <b>+ Eintrag</b>.</div>`;
@@ -168,15 +168,15 @@ function openForm(entry, carry){
   const f = S.form = entry ? clone(entry) : {
     id: "e" + Date.now().toString(36) + Math.random().toString(36).slice(2,6),
     time: pad(now.getHours()) + ":" + pad(now.getMinutes()),
-    pain: null, mood: null, stress: null, activity: "", region: "", side: "", face: "", locationNote: "", qualities: [], duration: "", meds: "", helped: "", note: ""
+    timeEnd: "", pain: null, mood: null, stress: null, activity: "", region: "", side: "", face: "", locationNote: "", qualities: [], duration: "", meds: "", helped: "", note: ""
   };
   f.qualities = f.qualities || [];
-  if (carry){ f.time = carry.time; f.activity = carry.activity; f.mood = carry.mood; f.stress = carry.stress; }
+  if (carry){ f.time = carry.time; f.timeEnd = carry.timeEnd; f.activity = carry.activity; f.mood = carry.mood; f.stress = carry.stress; }
   S.editId = entry ? entry.id : null;
   $("#formErr").hidden = true; $("#saveMore").hidden = !!entry;
-  $("#more").open = !!(f.qualities.length || f.duration || f.meds || f.helped);
   $("#formTitle").textContent = entry ? "Eintrag bearbeiten" : carry ? "Weitere Stelle" : "Neuer Eintrag";
   $("#fTime").value = f.time;
+  $("#fTimeEnd").value = f.timeEnd || "";
   const pe = $("#fPain");
   pe.innerHTML = Array.from({length:10},(_,i)=>i+1).map(v => `<button type="button" data-v="${v}" style="background:${painColor(v)}" aria-pressed="${f.pain===v}">${v}</button>`).join("");
   pe.onclick = e => { const b = e.target.closest("button"); if (!b) return; f.pain = +b.dataset.v; pe.querySelectorAll("button").forEach(x => x.setAttribute("aria-pressed", +x.dataset.v===f.pain)); };
@@ -190,7 +190,6 @@ function openForm(entry, carry){
   chips("#fFace", FACES, f.face ? [f.face] : [], false, s => f.face = s[0] || "");
   $("#fLocOther").value = f.locationNote || "";
   chips("#fQual", QUALS, f.qualities, true, s => f.qualities = s);
-  $("#fDur").value = f.duration || "";
   $("#fMed").value = f.meds || "";
   chips("#fHelp", HELP, f.helped ? [f.helped] : [], false, s => f.helped = s[0] || "");
   $("#fNote").value = f.note || "";
@@ -210,11 +209,12 @@ function commit(){
   f.time = $("#fTime").value || f.time;
   const other = $("#fActOther").value.trim(); if (other) f.activity = other;
   f.locationNote = $("#fLocOther").value.trim();
-  f.duration = $("#fDur").value; f.meds = $("#fMed").value.trim(); f.note = $("#fNote").value.trim();
+  f.timeEnd = $("#fTimeEnd").value; f.meds = $("#fMed").value.trim(); f.note = $("#fNote").value.trim();
   const miss = [];
   if (!f.pain) miss.push("Schmerzstärke");
   if (!f.region && !f.locationNote) miss.push("Körperstelle");
   if (!f.activity) miss.push("Aktion");
+  if (!miss.length && f.timeEnd && f.timeEnd < f.time){ const n = $("#formErr"); n.hidden = false; n.textContent = "„bis“ liegt vor „von“ – bitte Uhrzeit prüfen."; n.scrollIntoView({block:"center",behavior:"smooth"}); return null; }
   if (miss.length){ const n = $("#formErr"); n.hidden = false; n.textContent = "Bitte noch angeben: " + miss.join(", ") + "."; n.scrollIntoView({block:"center",behavior:"smooth"}); return null; }
   delete f.locations;
   const id = S.editId;
@@ -222,7 +222,7 @@ function commit(){
   return f;
 }
 $("#form").addEventListener("submit", e => { e.preventDefault(); if (commit()) closeForm(); });
-$("#saveMore").onclick = () => { const f = commit(); if (f){ const carry = { time: f.time, activity: f.activity, mood: f.mood, stress: f.stress }; openForm(null, carry); } };
+$("#saveMore").onclick = () => { const f = commit(); if (f){ const carry = { time: f.time, timeEnd: f.timeEnd, activity: f.activity, mood: f.mood, stress: f.stress }; openForm(null, carry); } };
 $("#del").onclick = () => {
   const b = $("#del");
   if (!b.classList.contains("armed")){ b.classList.add("armed"); b.textContent = "Wirklich?"; return; }
@@ -253,12 +253,12 @@ function rangeDays(){
 }
 function toCsv(days){
   const c = v => { v = v == null ? "" : String(v); return /[;"\n\r]/.test(v) ? '"' + v.replace(/"/g,'""') + '"' : v; };
-  const head = ["Datum","Wochentag","Uhrzeit","Schmerz (1-10)","Körperregion","Seite","Fläche","Genauer","Aktion","Schmerzart","Dauer","Medikament/Maßnahme","Geholfen","Stimmung (1-5)","Stress (1-5)","Notiz"];
+  const head = ["Datum","Wochentag","Uhrzeit von","Uhrzeit bis","Schmerz (1-10)","Körperregion","Seite","Fläche","Genauer","Aktion","Schmerzart","Dauer","Medikament/Maßnahme","Geholfen","Stimmung (1-5)","Stress (1-5)","Notiz"];
   const rows = [head];
   for (const d of days){
     const wd = parse(d.date).toLocaleDateString("de-DE",{weekday:"short"});
     const es = (d.entries||[]).slice().sort((a,b)=>a.time.localeCompare(b.time));
-    for (const e of es) rows.push([d.date, wd, e.time, e.pain, e.region || (e.locations||[]).join(", "), e.side, e.face || "", e.locationNote, e.activity, (e.qualities||[]).join(", "), e.duration, e.meds, e.helped, e.mood ?? "", e.stress ?? "", e.note]);
+    for (const e of es) rows.push([d.date, wd, e.time, e.timeEnd || "", e.pain, e.region || (e.locations||[]).join(", "), e.side, e.face || "", e.locationNote, e.activity, (e.qualities||[]).join(", "), e.duration, e.meds, e.helped, e.mood ?? "", e.stress ?? "", e.note]);
   }
   return "﻿" + rows.map(r => r.map(c).join(";")).join("\r\n");
 }
