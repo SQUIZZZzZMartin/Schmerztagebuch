@@ -80,6 +80,7 @@ svg text{fill:var(--muted);font-family:var(--f-body)}
 .entry{display:grid;grid-template-columns:56px 44px 1fr;gap:12px;align-items:center;text-align:left;border:0;background:var(--surface-2);border-radius:16px;padding:12px;width:100%}
 .entry .t{font-family:var(--f-display);font-weight:700;font-size:17px;font-variant-numeric:tabular-nums}
 .entry .t small{display:block;font-size:13px;font-weight:600;color:var(--muted)}
+.pain.none{background:var(--line);color:var(--muted)}
 .pain{width:44px;height:44px;border-radius:12px;display:grid;place-items:center;font-weight:800;font-family:var(--f-display);font-size:20px;color:#141a0c}
 .entry .what{min-width:0}
 .entry .what b{display:block;font-weight:600}
@@ -201,15 +202,15 @@ pre.out{white-space:pre-wrap;overflow-wrap:anywhere;font-size:12px;max-height:20
     <div class="sheet-head"><h2 id="formTitle">Neuer Eintrag</h2><button type="button" class="nav" id="close" aria-label="Schließen" style="box-shadow:none;background:var(--surface-2)">✕</button></div>
 
     <div class="two">
-      <div class="field"><label class="label" for="fTime">Uhrzeit von <em class="req">Pflicht</em></label><input type="time" id="fTime" required></div>
+      <div class="field"><label class="label" for="fTime">Uhrzeit von</label><input type="time" id="fTime"></div>
       <div class="field"><label class="label" for="fTimeEnd">bis</label><input type="time" id="fTimeEnd"></div>
     </div>
 
-    <div class="field"><span class="label">Schmerzstärke <em class="req">Pflicht</em></span>
+    <div class="field"><span class="label">Schmerzstärke</span>
       <div class="scale s10" id="fPain"></div>
       <div class="scalehint mt"><span>1 kaum spürbar</span><span>10 unerträglich</span></div></div>
 
-    <div class="field"><span class="label">Wo tut es weh? <em class="req">Pflicht</em></span>
+    <div class="field"><span class="label">Wo tut es weh?</span>
       <div class="chips" id="fLoc"></div>
       <input type="text" id="fLocOther" placeholder="Genauer, z. B. „unter dem Schulterblatt“"></div>
 
@@ -219,7 +220,7 @@ pre.out{white-space:pre-wrap;overflow-wrap:anywhere;font-size:12px;max-height:20
 
     <div class="field"><span class="label">Wie fühlt es sich an?</span><div class="chips" id="fQual"></div></div>
 
-    <div class="field"><span class="label">Was hast du gemacht? <em class="req">Pflicht</em></span>
+    <div class="field"><span class="label">Was hast du gemacht?</span>
       <div class="chips" id="fAct"></div>
       <input type="text" id="fActOther" placeholder="Andere Aktion …"></div>
 

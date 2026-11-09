@@ -17,6 +17,8 @@ const ds = d => d.getFullYear()+"-"+pad(d.getMonth()+1)+"-"+pad(d.getDate());
 const parse = s => { const [y,m,d] = s.split("-").map(Number); return new Date(y,m-1,d); };
 const addDays = (s,n) => { const d = parse(s); d.setDate(d.getDate()+n); return ds(d); };
 const today = () => ds(new Date());
+const hasPain = e => typeof e.pain === "number" && e.pain >= 1;
+const byTime = (a,b) => (a.time||"").localeCompare(b.time||"");
 const painColor = p => `hsl(${Math.round(110 - (p-1)*12.2)} 72% 56%)`;
 const clone = o => JSON.parse(JSON.stringify(o));
 const esc = s => String(s ?? "").replace(/[&<>"]/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
@@ -89,7 +91,7 @@ async function connect(){
 }
 
 /* ---------- Darstellung ---------- */
-function dayEntries(date){ return ((S.days[date] && S.days[date].entries) || []).slice().sort((a,b) => a.time.localeCompare(b.time)); }
+function dayEntries(date){ return ((S.days[date] && S.days[date].entries) || []).slice().sort(byTime); }
 
 function render(){
   const t = today(), d = parse(S.date);
@@ -104,7 +106,7 @@ function render(){
   const mon = addDays(S.date, -((d.getDay()+6)%7));
   let wk = "";
   for (let i=0;i<7;i++){
-    const k = addDays(mon,i), e = dayEntries(k), mx = e.length ? Math.max(...e.map(x=>x.pain)) : 0;
+    const k = addDays(mon,i), e = dayEntries(k), pe = e.filter(hasPain), mx = pe.length ? Math.max(...pe.map(x=>x.pain)) : 0;
     wk += `<button class="wd${k===S.date?" sel":""}${k>t?" future":""}" data-d="${k}" ${k>t?"disabled":""} aria-label="${parse(k).toLocaleDateString("de-DE",{weekday:"long",day:"numeric",month:"long"})}${mx?", max. Schmerz "+mx:""}">
       <small>${WDAYS[parse(k).getDay()]}</small><b>${parse(k).getDate()}</b><i style="${mx?`background:${painColor(mx)};border:0`:""}"></i></button>`;
   }
@@ -113,18 +115,19 @@ function render(){
   // Einträge
   const es = dayEntries(S.date);
   $("#sCount").textContent = es.length;
-  $("#sMax").textContent = es.length ? Math.max(...es.map(x=>x.pain)) : "–";
-  $("#sAvg").textContent = es.length ? (es.reduce((a,x)=>a+x.pain,0)/es.length).toFixed(1).replace(".",",") : "–";
+  const ps = es.filter(hasPain);
+  $("#sMax").textContent = ps.length ? Math.max(...ps.map(x=>x.pain)) : "–";
+  $("#sAvg").textContent = ps.length ? (ps.reduce((a,x)=>a+x.pain,0)/ps.length).toFixed(1).replace(".",",") : "–";
   $("#entries").innerHTML = es.length ? es.map(e => {
     const loc = locText(e);
     const ms = [ e.mood ? "Stimmung "+e.mood+"/5" : "", e.stress ? "Stress "+e.stress+"/5" : "" ].filter(Boolean).join(" · ");
     const sub = [ e.activity, (e.qualities||[]).join(", "), e.meds ? "💊 "+e.meds : "", ms ].filter(Boolean).join(" — ");
-    return `<button class="entry" data-id="${esc(e.id)}"><span class="t">${esc(e.time)}${e.timeEnd?`<small>–${esc(e.timeEnd)}</small>`:""}</span>
-      <span class="pain" style="background:${painColor(e.pain)}">${e.pain}</span>
+    return `<button class="entry" data-id="${esc(e.id)}"><span class="t">${esc(e.time || "–")}${e.timeEnd?`<small>–${esc(e.timeEnd)}</small>`:""}</span>
+      ${hasPain(e) ? `<span class="pain" style="background:${painColor(e.pain)}">${e.pain}</span>` : `<span class="pain none">–</span>`}
       <span class="what"><b>${esc(loc || "ohne Stelle")}</b>${sub?`<span>${esc(sub)}</span>`:""}${e.note?`<span>${esc(e.note)}</span>`:""}</span></button>`;
   }).join("") : `<div class="empty">Noch keine Einträge für diesen Tag.<br>Tippe unten auf <b>+ Eintrag</b>.</div>`;
 
-  renderChart(es);
+  renderChart(es.filter(e => hasPain(e) && e.time));
 
   if (!$("#expFrom").value){ const ks = Object.keys(S.days).sort(); $("#expFrom").value = ks[0] || addDays(t,-30); }
   if (!$("#expTo").value) $("#expTo").value = t;
@@ -179,7 +182,7 @@ function openForm(entry, carry){
   $("#fTimeEnd").value = f.timeEnd || "";
   const pe = $("#fPain");
   pe.innerHTML = Array.from({length:10},(_,i)=>i+1).map(v => `<button type="button" data-v="${v}" style="background:${painColor(v)}" aria-pressed="${f.pain===v}">${v}</button>`).join("");
-  pe.onclick = e => { const b = e.target.closest("button"); if (!b) return; f.pain = +b.dataset.v; pe.querySelectorAll("button").forEach(x => x.setAttribute("aria-pressed", +x.dataset.v===f.pain)); };
+  pe.onclick = e => { const b = e.target.closest("button"); if (!b) return; f.pain = f.pain === +b.dataset.v ? null : +b.dataset.v; pe.querySelectorAll("button").forEach(x => x.setAttribute("aria-pressed", +x.dataset.v===f.pain)); };
   const pick5 = (sel, key) => scale5(sel, f[key], v => { f[key] = f[key] === v ? null : v; $(sel).querySelectorAll("button").forEach(x => x.setAttribute("aria-pressed", +x.dataset.v === f[key])); });
   pick5("#fMood","mood"); pick5("#fStress","stress");
   const isStd = ACTS.includes(f.activity);
@@ -210,12 +213,10 @@ function commit(){
   const other = $("#fActOther").value.trim(); if (other) f.activity = other;
   f.locationNote = $("#fLocOther").value.trim();
   f.timeEnd = $("#fTimeEnd").value; f.meds = $("#fMed").value.trim(); f.note = $("#fNote").value.trim();
-  const miss = [];
-  if (!f.pain) miss.push("Schmerzstärke");
-  if (!f.region && !f.locationNote) miss.push("Körperstelle");
-  if (!f.activity) miss.push("Aktion");
-  if (!miss.length && f.timeEnd && f.timeEnd < f.time){ const n = $("#formErr"); n.hidden = false; n.textContent = "„bis“ liegt vor „von“ – bitte Uhrzeit prüfen."; n.scrollIntoView({block:"center",behavior:"smooth"}); return null; }
-  if (miss.length){ const n = $("#formErr"); n.hidden = false; n.textContent = "Bitte noch angeben: " + miss.join(", ") + "."; n.scrollIntoView({block:"center",behavior:"smooth"}); return null; }
+  if (f.timeEnd && f.time && f.timeEnd < f.time){ const n = $("#formErr"); n.hidden = false; n.textContent = "„bis“ liegt vor „von“ – bitte Uhrzeit prüfen."; n.scrollIntoView({block:"center",behavior:"smooth"}); return null; }
+  // keine Pflichtfelder – nur ein völlig leerer Eintrag wird nicht gespeichert
+  const filled = f.pain || f.region || f.locationNote || f.side || f.face || f.qualities.length || f.activity || f.note || f.meds || f.helped || f.mood || f.stress;
+  if (!filled){ const n = $("#formErr"); n.hidden = false; n.textContent = "Der Eintrag ist noch leer."; n.scrollIntoView({block:"center",behavior:"smooth"}); return null; }
   delete f.locations;
   const id = S.editId;
   saveDay(S.date, d => { d.entries = (d.entries||[]).filter(x => x.id !== (id || f.id)); d.entries.push(f); });
@@ -257,7 +258,7 @@ function toCsv(days){
   const rows = [head];
   for (const d of days){
     const wd = parse(d.date).toLocaleDateString("de-DE",{weekday:"short"});
-    const es = (d.entries||[]).slice().sort((a,b)=>a.time.localeCompare(b.time));
+    const es = (d.entries||[]).slice().sort(byTime);
     for (const e of es) rows.push([d.date, wd, e.time, e.timeEnd || "", e.pain, e.region || (e.locations||[]).join(", "), e.side, e.face || "", e.locationNote, e.activity, (e.qualities||[]).join(", "), e.duration, e.meds, e.helped, e.mood ?? "", e.stress ?? "", e.note]);
   }
   return "﻿" + rows.map(r => r.map(c).join(";")).join("\r\n");
@@ -293,7 +294,7 @@ $("#impFile").addEventListener("change", async e => {
   for (const d of tage){
     if (!d || !isDay(d.date) || !Array.isArray(d.entries)) continue;
     const have = new Set(dayEntries(d.date).map(x => x.id));
-    const fresh = d.entries.filter(x => x && x.id && x.time && x.pain && !have.has(x.id));
+    const fresh = d.entries.filter(x => x && x.id && !have.has(x.id));
     if (!fresh.length) continue;
     added += fresh.length; days++;
     writes.push(saveDay(d.date, cur => { cur.entries = (cur.entries||[]).concat(clone(fresh)); }));
