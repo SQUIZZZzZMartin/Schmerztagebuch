@@ -1,0 +1,244 @@
+<!doctype html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Mein Schmerztagebuch</title>
+<meta name="robots" content="noindex,nofollow">
+<meta name="theme-color" content="#b9dd7f" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#18240e" media="(prefers-color-scheme: dark)">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Schmerztagebuch">
+<link rel="icon" href="icon.svg" type="image/svg+xml">
+<link rel="apple-touch-icon" href="icon-180.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,600;12..96,800&family=Figtree:wght@400;500;600;700&display=swap">
+<style>
+/* Layout: eine Spalte wie eine iPhone-App – Datumskopf oben (sticky), Wochenleiste, Tageskurve, Einträge; "+" unten fixiert, Formular als Bottom-Sheet */
+:root{
+  --bg:#b9dd7f;          /* Maigrün */
+  --bg-deep:#a6d064;
+  --surface:#fbfdf5;
+  --surface-2:#eef6df;
+  --ink:#1c2810;
+  --muted:#56663f;
+  --line:#d9e7c2;
+  --accent:#3b6a17;
+  --accent-ink:#ffffff;
+  --danger:#b3261e;
+  --shadow:0 1px 2px rgba(40,60,10,.08),0 6px 20px rgba(40,60,10,.08);
+  --f-display:"Bricolage Grotesque","Avenir Next",system-ui,sans-serif;
+  --f-body:"Figtree",-apple-system,system-ui,sans-serif;
+  color-scheme:light;
+}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){
+  --bg:#18240e;--bg-deep:#1f2e13;--surface:#223217;--surface-2:#2b3e1e;--ink:#ecf5dc;--muted:#a7b892;--line:#35492a;--accent:#a5d867;--accent-ink:#13200a;--danger:#ff8a80;--shadow:0 1px 2px rgba(0,0,0,.3),0 6px 20px rgba(0,0,0,.25);color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#18240e;--bg-deep:#1f2e13;--surface:#223217;--surface-2:#2b3e1e;--ink:#ecf5dc;--muted:#a7b892;--line:#35492a;--accent:#a5d867;--accent-ink:#13200a;--danger:#ff8a80;--shadow:0 1px 2px rgba(0,0,0,.3),0 6px 20px rgba(0,0,0,.25);color-scheme:dark}
+
+*{box-sizing:border-box}
+[hidden]{display:none!important}
+html,body{background:var(--bg);margin:0}
+body{color:var(--ink);font-family:var(--f-body);font-size:16px;line-height:1.45;-webkit-text-size-adjust:100%;
+  padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));padding-top:env(safe-area-inset-top,0px);padding-bottom:120px}
+body::before{content:"";position:fixed;inset:0 0 auto;height:env(safe-area-inset-top,0px);z-index:10;background:var(--bg)}
+.wrap{max-width:560px;margin:0 auto;display:flex;flex-direction:column;gap:14px}
+button{font:inherit;color:inherit;cursor:pointer;-webkit-tap-highlight-color:transparent}
+button:focus-visible,input:focus-visible,textarea:focus-visible,select:focus-visible{outline:3px solid var(--accent);outline-offset:2px}
+h1,h2{font-family:var(--f-display);margin:0;text-wrap:balance}
+
+/* Kopf */
+header{position:sticky;top:env(safe-area-inset-top,0px);z-index:5;background:var(--bg);padding-block:12px 8px;display:flex;align-items:center;gap:8px}
+.nav{width:44px;height:44px;border-radius:50%;border:0;background:var(--surface);box-shadow:var(--shadow);display:grid;place-items:center;font-size:20px;flex:none}
+.nav:disabled{opacity:.35}
+.datebox{flex:1;min-width:0;position:relative;text-align:center}
+.datebox .eyebrow{font-size:12px;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);font-weight:600}
+.datebox h1{font-size:24px;font-weight:800;line-height:1.1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.datebox input{position:absolute;inset:0;opacity:0;width:100%;height:100%;font-size:16px}
+.todaybtn{border:0;background:var(--accent);color:var(--accent-ink);border-radius:999px;padding:4px 10px;font-size:12px;font-weight:700;margin-top:2px}
+
+/* Woche */
+.week{display:grid;grid-template-columns:repeat(7,1fr);gap:6px}
+.wd{border:0;background:var(--surface-2);border-radius:14px;padding:6px 0 8px;display:flex;flex-direction:column;align-items:center;gap:3px;min-width:0}
+.wd small{font-size:11px;color:var(--muted);font-weight:600;text-transform:uppercase}
+.wd b{font-size:16px;font-variant-numeric:tabular-nums}
+.wd i{width:10px;height:10px;border-radius:50%;background:transparent;border:1.5px dashed var(--line)}
+.wd.sel{background:var(--surface);box-shadow:var(--shadow);outline:2px solid var(--accent)}
+.wd.future{opacity:.4}
+
+.card{background:var(--surface);border-radius:20px;box-shadow:var(--shadow);padding:16px;display:flex;flex-direction:column;gap:12px;min-width:0}
+.card h2{font-size:18px;font-weight:700}
+.row{display:flex;align-items:center;justify-content:space-between;gap:12px}
+.stats{display:flex;gap:18px;color:var(--muted);font-size:14px}
+.stats b{color:var(--ink);font-size:18px;font-variant-numeric:tabular-nums;font-family:var(--f-display)}
+svg text{fill:var(--muted);font-family:var(--f-body)}
+
+/* Einträge */
+.entries{display:flex;flex-direction:column;gap:8px}
+.entry{display:grid;grid-template-columns:56px 44px 1fr;gap:12px;align-items:center;text-align:left;border:0;background:var(--surface-2);border-radius:16px;padding:12px;width:100%}
+.entry .t{font-family:var(--f-display);font-weight:700;font-size:17px;font-variant-numeric:tabular-nums}
+.pain{width:44px;height:44px;border-radius:12px;display:grid;place-items:center;font-weight:800;font-family:var(--f-display);font-size:20px;color:#141a0c}
+.entry .what{min-width:0}
+.entry .what b{display:block;font-weight:600}
+.entry .what span{display:block;font-size:14px;color:var(--muted);overflow-wrap:anywhere}
+.empty{color:var(--muted);text-align:center;padding:18px 8px;font-size:15px}
+
+/* Chips & Skalen */
+.label{font-size:13px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--muted)}
+.chips{display:flex;flex-wrap:wrap;gap:8px}
+.chip{border:1.5px solid var(--line);background:var(--surface);border-radius:999px;padding:8px 13px;font-size:15px;min-height:40px}
+.chip[aria-pressed="true"]{background:var(--accent);border-color:var(--accent);color:var(--accent-ink);font-weight:600}
+.scale{display:grid;grid-template-columns:repeat(5,1fr);gap:8px}
+.scale button{border:2px solid transparent;border-radius:12px;height:48px;font-weight:800;font-family:var(--f-display);font-size:19px}
+.scale.s10 button{color:#141a0c}
+.scale.s5 button{background:var(--surface-2)}
+.scale button[aria-pressed="true"]{border-color:var(--ink);transform:scale(1.04)}
+.scale.s5 button[aria-pressed="true"]{background:var(--accent);color:var(--accent-ink);border-color:var(--accent)}
+.scalehint{display:flex;justify-content:space-between;font-size:12px;color:var(--muted)}
+input[type=text],input[type=time],input[type=date],textarea,select{width:100%;font:inherit;font-size:16px;color:var(--ink);background:var(--surface-2);border:1.5px solid var(--line);border-radius:12px;padding:10px 12px;min-height:44px}
+textarea{min-height:72px;resize:vertical}
+.field{display:flex;flex-direction:column;gap:8px}
+
+.btn{border:0;border-radius:14px;padding:13px 18px;font-weight:700;font-size:16px;min-height:48px}
+.btn.primary{background:var(--accent);color:var(--accent-ink)}
+.btn.ghost{background:var(--surface-2)}
+.btn.danger{background:transparent;color:var(--danger);border:1.5px solid var(--danger)}
+.btn.danger.armed{background:var(--danger);color:#fff}
+label.btn{display:grid;place-items:center;text-align:center;cursor:pointer}
+
+.fab{position:fixed;left:50%;transform:translateX(-50%);bottom:calc(18px + env(safe-area-inset-bottom,0px));z-index:6;border:0;background:var(--accent);color:var(--accent-ink);border-radius:999px;padding:15px 26px;font-weight:700;font-size:17px;box-shadow:0 8px 24px rgba(30,50,10,.35);display:flex;gap:8px;align-items:center}
+.fab span{font-size:24px;line-height:0}
+
+.notice{background:var(--surface-2);border-radius:14px;padding:10px 14px;font-size:14px;color:var(--muted)}
+.notice[data-kind=warn]{border:1.5px solid var(--danger);color:var(--ink)}
+
+/* Sheet */
+.overlay{position:fixed;inset:0;background:rgba(15,25,5,.45);z-index:20;display:flex;align-items:flex-end;justify-content:center}
+.sheet{background:var(--surface);width:100%;max-width:600px;max-height:92%;overflow-y:auto;-webkit-overflow-scrolling:touch;border-radius:24px 24px 0 0;
+  padding:8px max(16px,env(safe-area-inset-right,0px)) calc(20px + env(safe-area-inset-bottom,0px)) max(16px,env(safe-area-inset-left,0px));display:flex;flex-direction:column;gap:18px}
+.grab{width:40px;height:5px;border-radius:3px;background:var(--line);margin:4px auto 0;flex:none}
+.sheet-head{display:flex;justify-content:space-between;align-items:center;position:sticky;top:-8px;background:var(--surface);padding-block:8px;z-index:1}
+.sheet-head h2{font-size:21px}
+.actions{display:grid;grid-template-columns:1fr 2fr;gap:10px}
+.two{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:10px}
+.two>*{min-width:0}
+input[type=date],input[type=time]{min-width:0;-webkit-appearance:none;appearance:none}
+.mt{margin-top:-4px}
+.label.sub{margin-top:4px;font-size:12px}
+.req{font-style:normal;font-weight:600;font-size:11px;letter-spacing:0;text-transform:none;color:var(--accent);margin-left:6px}
+.more{border-top:1.5px solid var(--line);padding-top:12px;display:flex;flex-direction:column;gap:16px}
+.more[open]>summary{margin-bottom:14px}
+.more>.field+.field{margin-top:16px}
+.more summary{font-weight:600;color:var(--accent);cursor:pointer;min-height:32px}
+pre.out{white-space:pre-wrap;overflow-wrap:anywhere;font-size:12px;max-height:200px;overflow:auto;background:var(--surface-2);padding:10px;border-radius:10px;margin:0}
+.foot{text-align:center;font-size:12px;color:var(--muted)}
+@media (prefers-reduced-motion:reduce){*{transition:none!important}}
+</style>
+</head>
+<body>
+
+<div class="wrap">
+  <header>
+    <button class="nav" id="prev" aria-label="Vorheriger Tag">‹</button>
+    <div class="datebox">
+      <div class="eyebrow" id="eyebrow">Heute</div>
+      <h1 id="dateTitle">–</h1>
+      <input type="date" id="datePick" aria-label="Datum wählen">
+    </div>
+    <button class="nav" id="next" aria-label="Nächster Tag">›</button>
+  </header>
+  <div style="display:flex;justify-content:center;margin-top:-6px"><button class="todaybtn" id="toToday" hidden>Zu heute springen</button></div>
+
+  <nav class="week" id="week" aria-label="Woche"></nav>
+
+  <div class="notice" id="status">Verbinde mit der Datenbank …</div>
+
+  <section class="card" aria-labelledby="h-verlauf">
+    <div class="row"><h2 id="h-verlauf">Verlauf</h2>
+      <div class="stats"><div>Einträge <b id="sCount">0</b></div><div>Max <b id="sMax">–</b></div><div>Ø <b id="sAvg">–</b></div></div>
+    </div>
+    <svg id="chart" viewBox="0 0 340 120" width="100%" role="img" aria-label="Schmerzverlauf über den Tag"></svg>
+  </section>
+
+  <section class="card" aria-labelledby="h-eintr">
+    <h2 id="h-eintr">Einträge</h2>
+    <div class="entries" id="entries"></div>
+  </section>
+
+  <section class="card" aria-labelledby="h-exp">
+    <h2 id="h-exp">Export</h2>
+    <div class="two">
+      <div class="field"><label class="label" for="expFrom">Von</label><input type="date" id="expFrom"></div>
+      <div class="field"><label class="label" for="expTo">Bis</label><input type="date" id="expTo"></div>
+    </div>
+    <div class="two">
+      <button class="btn ghost" id="expCsv">CSV (Excel)</button>
+      <button class="btn ghost" id="expJson">JSON</button>
+    </div>
+    <div class="notice" id="expMsg" hidden></div>
+    <pre class="out" id="expOut" hidden></pre>
+  </section>
+
+  <section class="card" aria-labelledby="h-imp">
+    <h2 id="h-imp">Import</h2>
+    <p class="notice" style="margin:0">JSON-Export aus der alten Version (oder ein Backup) einlesen. Vorhandene Einträge bleiben erhalten, gleiche Einträge werden nicht doppelt angelegt.</p>
+    <label class="btn ghost" for="impFile">JSON-Datei auswählen</label>
+    <input type="file" id="impFile" accept=".json,application/json" hidden>
+    <div class="notice" id="impMsg" hidden></div>
+  </section>
+
+  <p class="foot">Schmerztagebuch · Daten in Firebase (EU)</p>
+</div>
+
+<button class="fab" id="add"><span>+</span> Eintrag</button>
+
+<div class="overlay" id="overlay" hidden>
+  <form class="sheet" id="form" novalidate>
+    <div class="grab"></div>
+    <div class="sheet-head"><h2 id="formTitle">Neuer Eintrag</h2><button type="button" class="nav" id="close" aria-label="Schließen" style="box-shadow:none;background:var(--surface-2)">✕</button></div>
+
+    <div class="field"><label class="label" for="fTime">Uhrzeit</label><input type="time" id="fTime" required></div>
+
+    <div class="field"><span class="label">Schmerzstärke</span>
+      <div class="scale s10" id="fPain"></div>
+      <div class="scalehint mt"><span>1 kaum spürbar</span><span>10 unerträglich</span></div></div>
+
+    <div class="field"><span class="label">Wo tut es weh? <em class="req">Pflicht</em></span>
+      <div class="chips" id="fLoc"></div>
+      <span class="label sub">Seite</span><div class="chips" id="fSide"></div>
+      <span class="label sub">Fläche (optional)</span><div class="chips" id="fFace"></div>
+      <input type="text" id="fLocOther" placeholder="Genauer, z. B. „unter dem Schulterblatt“"></div>
+
+    <div class="field"><span class="label">Was hast du gemacht? <em class="req">Pflicht</em></span>
+      <div class="chips" id="fAct"></div>
+      <input type="text" id="fActOther" placeholder="Andere Aktion …"></div>
+
+    <div class="field"><label class="label" for="fNote">Notiz</label><textarea id="fNote" placeholder="Auslöser, Besonderheiten …"></textarea></div>
+
+    <div class="field"><span class="label">Stimmung / Gemütslage</span>
+      <div class="scale s5" id="fMood"></div>
+      <div class="scalehint mt"><span>sehr schlecht</span><span>sehr gut</span></div></div>
+
+    <div class="field"><span class="label">Stresslevel</span>
+      <div class="scale s5" id="fStress"></div>
+      <div class="scalehint mt"><span>entspannt</span><span>sehr gestresst</span></div></div>
+
+    <details class="more" id="more"><summary>Weitere Angaben (Schmerzart, Dauer, Medikament)</summary>
+    <div class="field"><span class="label">Wie fühlte es sich an?</span><div class="chips" id="fQual"></div></div>
+    <div class="field"><label class="label" for="fDur">Dauer</label>
+      <select id="fDur"><option value="">–</option><option>Sekunden</option><option>einige Minuten</option><option>bis 1 Stunde</option><option>mehrere Stunden</option><option>den ganzen Tag</option></select></div>
+    <div class="field"><label class="label" for="fMed">Medikament / Maßnahme</label>
+      <input type="text" id="fMed" placeholder="z. B. Ibuprofen 400, Wärmekissen, Dehnen"></div>
+    <div class="field"><span class="label">Hat es geholfen?</span><div class="chips" id="fHelp"></div></div>
+    </details>
+
+    <div class="notice" id="formErr" data-kind="warn" hidden></div>
+    <div class="actions"><button type="button" class="btn danger" id="del" hidden>Löschen</button><button type="button" class="btn ghost" id="cancel">Abbrechen</button><button type="submit" class="btn primary" id="save">Speichern</button></div>
+    <button type="button" class="btn ghost" id="saveMore">Speichern + weitere Stelle zur selben Zeit</button>
+  </form>
+</div>
+
+<script type="module" src="app.js"></script>
+</body>
+</html>

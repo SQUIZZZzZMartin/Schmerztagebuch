@@ -1,0 +1,21 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // Schmerztagebuch – Testphase (Schritt 1): Zugriff nur über die Seite
+    // (unsichtbare anonyme Firebase-Anmeldung). Wer den Link kennt, kann lesen und schreiben.
+    // Schritt 2: Anmeldung mit E-Mail + Passwort; dann wird "request.auth != null" durch
+    // eine Prüfung auf Mirkos Konto ersetzt (siehe README).
+    match /diaries/{diary}/days/{day} {
+      allow read: if request.auth != null && diary == 'mirko';
+      allow create, update: if request.auth != null
+        && diary == 'mirko'
+        && day.matches('^[0-9]{4}-[0-9]{2}-[0-9]{2}$')
+        && request.resource.data.keys().hasOnly(['date', 'entries', 'updatedAt'])
+        && request.resource.data.date == day
+        && request.resource.data.entries is list
+        && request.resource.data.entries.size() <= 100;
+      allow delete: if request.auth != null && diary == 'mirko';
+    }
+    // alles andere ist gesperrt
+  }
+}
