@@ -313,5 +313,19 @@ $("#impFile").addEventListener("change", async e => {
   }
 });
 
+/* ---------- Selbst-Aktualisierung ----------
+   GitHub Pages lässt Browser die Seite ~10 Minuten zwischenspeichern; Homescreen-Apps auf dem iPhone noch länger.
+   Beim Öffnen und beim Zurückkehren in die App wird version.json frisch geladen. Ist sie neuer, lädt die App neu. */
+const APP_VERSION = 7;   // bei jeder Änderung zusammen mit version.json und "app.js?v=" in index.html erhöhen
+async function checkUpdate(){
+  try {
+    const r = await fetch("version.json?t=" + Date.now(), { cache: "no-store" });
+    const { v } = await r.json();
+    if (v > APP_VERSION && !S.form) location.replace(location.pathname + "?v=" + v);
+  } catch {}
+}
+document.addEventListener("visibilitychange", () => { if (!document.hidden) checkUpdate(); });
+
 render();
 connect();
+checkUpdate();

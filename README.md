@@ -18,6 +18,8 @@ Ursprünglich von Jonas als Claude-Artifact gebaut; seit November 2026 hier auf 
 | `firestore.rules` | Sicherheitsregeln – Kopie dessen, was in der Firebase-Konsole veröffentlicht ist |
 
 Kein Build-Schritt: Änderungen pushen, GitHub Pages veröffentlicht automatisch.
+Bei jeder Änderung die Versionsnummer an drei Stellen erhöhen: `version.json`, `APP_VERSION` in `app.js` und `app.js?v=` in `index.html`.
+Dann lädt sich die App auf den Handys beim nächsten Öffnen selbst neu.
 
 ## Daten in Firestore
 `diaries/mirko/days/<JJJJ-MM-TT>` = `{ date, entries: [...], updatedAt }` – ein Dokument pro Tag.
