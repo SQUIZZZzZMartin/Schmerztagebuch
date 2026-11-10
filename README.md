@@ -6,7 +6,7 @@ Export als CSV (Excel) oder JSON, Import von JSON-Exporten. Einträge lassen sic
 
 Ursprünglich von Jonas als Claude-Artifact gebaut; seit November 2026 hier auf GitHub Pages mit Firebase.
 
-- **Seite:** https://squizzzzzmartin.github.io/Schmerztagebuch/
+- **Seite:** https://martinhohmann.github.io/Schmerztagebuch/
 - **Firebase-Projekt:** `schmerztagebuch-3f45b` (Spark-Tarif, kostenlos), Firestore in `europe-west3` (Frankfurt)
 
 ## Aufbau
